@@ -1,0 +1,141 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Mapbox Animation</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.2.2/dist/threebox.min.js" type="text/javascript"></script>
+    <link href="https://cdn.jsdelivr.net/gh/jscastro76/threebox@v.2.2.2/dist/threebox.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiYWJoYXlmenYyIiwiYSI6ImNsZXNzZW9mcTAyanozem83am12NmJlczQifQ._w2s02CV9Ufl62nRwCrY9w';
+        const cities = [
+            {
+                "id" :1,
+                "name":"newyork",
+                "center":[-73.97313, 40.75595],
+                "zoom": 12,
+                "bearing":-77.47,
+                "pitch":65
+            },
+            {
+                "id" :2,
+                "name":"riodejaneiro",
+                "center":[-43.20934, -22.91334],
+                "zoom": 12.39,
+                "bearing":55.86,
+                "pitch":65.58
+            },
+            {
+                "id" :3,
+                "name":"rome",
+                "center":[12.48857, 41.89025],
+                "zoom": 12,
+                "bearing":-58.50,
+                "pitch":65.46
+            },
+            {
+                "id" :4,
+                "name":"Tokyo",
+                "center":[139.69255, 35.68915],
+                "zoom": 12,
+                "bearing":104.83,
+                "pitch":66.72
+            }
+        ];
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+            style: 'mapbox://styles/mapbox/dark-v11',
+            center: [100.507, 13.745],
+            zoom: 9,
+            projection: 'globe'
+        });
+        window.tb = new Threebox(
+            map,
+            map.getCanvas().getContext('webgl'), //get the context from the map canvas
+            { defaultLights: true }
+        );
+        var options = {
+            obj: 'Bar.glb',
+            type: 'gltf',
+            scale: 1000,
+            units: 'meters',
+            rotation: { x: 90, y: 0, z: 0 } //default rotation
+        }
+        //Scene 1//
+        map.on('load', () => {
+            map.addSource('graph', {
+                'type': 'geojson',
+                /*
+                * Each feature in this GeoJSON file contains values for
+                * `properties.height`, `properties.base_height`,
+                * and `properties.color`.
+                * In `addLayer` you will use expressions to set the new
+                * layer's paint properties based on these values.
+                */
+                'data':'./geodata/graph.geojson'
+            });
+            map.addLayer({
+                'id': 'graph-extrusion',
+                'type': 'fill-extrusion',
+                'source': 'graph',
+                'minzoom': 11,
+                'paint': {
+                    // Get the `fill-extrusion-color` from the source `color` property.
+                    'fill-extrusion-color': ['get', 'color'],
+
+                    // Get `fill-extrusion-height` from the source `height` property.
+                    'fill-extrusion-height': [
+                                        'interpolate',
+                                        ['linear'],
+                                        ['zoom'],
+                                        11,
+                                        0,
+                                        12,
+                                        ['get', 'height'],
+                    ],
+                    // Get `fill-extrusion-base` from the source `base_height` property.
+                    'fill-extrusion-base': ['get', 'base_heigh'],
+
+                    // Make extrusions slightly opaque to see through indoor walls.
+                    'fill-extrusion-opacity': 0.6,
+                    'fill-extrusion-vertical-gradient': false,
+                }
+            });
+        });
+        
+        for (const [index, city] of cities.entries()) {
+                setTimeout(() => {
+                    map.flyTo({ 
+                        center: city.center,
+                        zoom : city.zoom,
+                        bearing :city.bearing,
+                        pitch :city.pitch
+                     });
+                },15000 * index);
+                map.rotateTo(30, {duration: 2000});
+            }
+    </script>
+ 
+</body>
+</html>
